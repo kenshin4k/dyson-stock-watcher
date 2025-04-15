@@ -2,27 +2,28 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const nodemailer = require('nodemailer');
 
-// Email configuration
+// Gmail ayarları - Environment variable'lar ile
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'melanuryaaa@gmail.com', // Replace with your email
-    pass: 'ohpb mgtd vqmx dcdh'   // Replace with your email password
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
   }
 });
 
+// Mail içeriği
 const mailOptions = {
-  from: 'melanuryaaa@gmail.com',
-  to: 'recipient-email@gmail.com', // Replace with recipient email
+  from: process.env.EMAIL_USER,
+  to: 'recipient-email@gmail.com', // Alıcı adresini güncelle
   subject: 'DYSON GELDİİİ 🎉',
   text: 'Sayın Zelal Gözde Sik, DYSON GELDİİİ. Ürünü hemen almak için tıklayın: https://www.dyson.com.tr/products/hair-care/hair-stylers/airwrap-id/airwrap-id-multi-styler-dryer-straight-wavy-jasper-plum'
 };
 
 let alreadyNotified = false;
-let lastNotificationTime = 0; // Track the last notification time
-const notificationInterval = 3600000; // Original interval: 1 hour
+let lastNotificationTime = 0;
+const notificationInterval = 3600000; // 1 saat
 
-// Function to check stock
+// Stok kontrol fonksiyonu
 async function checkStock() {
   console.log('🌀 Checking stock…');
   try {
@@ -31,16 +32,14 @@ async function checkStock() {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
       }
     });
+
     const $ = cheerio.load(response.data);
-    const isAvailable = $('button:contains("Sepete Ekle")').length > 0; // Check if the product is in stock
+    const isAvailable = $('button:contains("Sepete Ekle")').length > 0;
 
-    // Debug log
     console.log('DEBUG → isAvailable:', isAvailable, '| alreadyNotified:', alreadyNotified);
-
     const currentTime = Date.now();
 
     if (isAvailable) {
-      // Send an email if it's the first notification or if an hour has passed since the last notification
       if (!alreadyNotified || (currentTime - lastNotificationTime) >= notificationInterval) {
         console.log('🟢 In stock! Sending email.');
         transporter.sendMail(mailOptions, (error, info) => {
@@ -51,19 +50,17 @@ async function checkStock() {
           console.log('Email sent:', info.response);
         });
         alreadyNotified = true;
-        lastNotificationTime = currentTime; // Update the last notification time
+        lastNotificationTime = currentTime;
       }
     } else {
       console.log('🔴 Still out of stock.');
-      alreadyNotified = false; // Reset notification status if the product is out of stock
+      alreadyNotified = false;
     }
+
   } catch (error) {
     console.error('Error checking stock:', error);
   }
 }
 
-// Call checkStock immediately for testing
 checkStock();
-
-// Check stock every 3 minutes
-setInterval(checkStock, 180000);
+setInterval(checkStock, 180000); // 3 dakikada bir kontrol
