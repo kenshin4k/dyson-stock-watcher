@@ -34,7 +34,8 @@ async function checkStock() {
     });
 
     const $ = cheerio.load(response.data);
-    const isAvailable = $('button:contains("Sepete Ekle")').length > 0;
+    // Temporary override for testing
+    const isAvailable = true; // const isAvailable = $('button:contains("Sepete Ekle")').length > 0;
 
     console.log('DEBUG → isAvailable:', isAvailable, '| alreadyNotified:', alreadyNotified);
     const currentTime = Date.now();
